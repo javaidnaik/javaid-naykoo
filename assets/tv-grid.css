@@ -314,6 +314,12 @@
   .tv-popup__dialog {
     width: min-content;
   }
+  .tv-banner__illustration img {
+    min-height: 360px;
+  }
+  .tv-banner__overlay-btn {
+    top: 80%;
+  }
 }
 
 /* Respect reduced-motion for the hotspot hover scale. */
