@@ -33,16 +33,20 @@
           "type": "hotspot",
           "settings": {
             "product": "black-leather-bag",
-            "hotspot_x": 50,
-            "hotspot_y": 50
+            "hotspot_x": 64,
+            "hotspot_y": 66,
+            "hotspot_x_mobile": 60,
+            "hotspot_y_mobile": 15
           }
         },
         "block_2": {
           "type": "hotspot",
           "settings": {
             "product": "blue-silk-tuxedo",
-            "hotspot_x": 50,
-            "hotspot_y": 50
+            "hotspot_x": 86,
+            "hotspot_y": 54,
+            "hotspot_x_mobile": 60,
+            "hotspot_y_mobile": 15
           }
         },
         "block_3": {
@@ -50,7 +54,9 @@
           "settings": {
             "product": "chequered-red-shirt",
             "hotspot_x": 50,
-            "hotspot_y": 50
+            "hotspot_y": 50,
+            "hotspot_x_mobile": 60,
+            "hotspot_y_mobile": 15
           }
         },
         "block_4": {
@@ -58,7 +64,9 @@
           "settings": {
             "product": "classic-leather-jacket",
             "hotspot_x": 50,
-            "hotspot_y": 50
+            "hotspot_y": 50,
+            "hotspot_x_mobile": 60,
+            "hotspot_y_mobile": 15
           }
         },
         "block_5": {
@@ -66,7 +74,9 @@
           "settings": {
             "product": "dark-denim-top",
             "hotspot_x": 50,
-            "hotspot_y": 50
+            "hotspot_y": 50,
+            "hotspot_x_mobile": 60,
+            "hotspot_y_mobile": 15
           }
         },
         "block_6": {
@@ -74,7 +84,9 @@
           "settings": {
             "product": "classic-varsity-top",
             "hotspot_x": 50,
-            "hotspot_y": 50
+            "hotspot_y": 50,
+            "hotspot_x_mobile": 60,
+            "hotspot_y_mobile": 15
           }
         }
       },
