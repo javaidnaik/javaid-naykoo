@@ -53,8 +53,8 @@
           "type": "hotspot",
           "settings": {
             "product": "chequered-red-shirt",
-            "hotspot_x": 50,
-            "hotspot_y": 50,
+            "hotspot_x": 64,
+            "hotspot_y": 23,
             "hotspot_x_mobile": 60,
             "hotspot_y_mobile": 15
           }
@@ -63,8 +63,8 @@
           "type": "hotspot",
           "settings": {
             "product": "classic-leather-jacket",
-            "hotspot_x": 50,
-            "hotspot_y": 50,
+            "hotspot_x": 70,
+            "hotspot_y": 29,
             "hotspot_x_mobile": 60,
             "hotspot_y_mobile": 15
           }
@@ -73,8 +73,8 @@
           "type": "hotspot",
           "settings": {
             "product": "dark-denim-top",
-            "hotspot_x": 50,
-            "hotspot_y": 50,
+            "hotspot_x": 74,
+            "hotspot_y": 45,
             "hotspot_x_mobile": 60,
             "hotspot_y_mobile": 15
           }
