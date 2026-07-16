@@ -18,6 +18,8 @@
         "top_button_link": "",
         "illustration": "shopify://shop_images/hero-banner.png",
         "heading": "The Gift Guide",
+        "heading_size": 84,
+        "hero_content_offset": 8,
         "description": "<p>Discover Joy: Your Ultimate Holiday Gift Destination. Explore our curated selection and find the perfect gifts to delight your loved ones this holiday season.</p>",
         "hero_button_label": "SHOP NOW",
         "hero_button_link": "",
@@ -86,6 +88,9 @@
       ],
       "settings": {
         "heading": "Tisso vison in the wild",
+        "heading_size": 40,
+        "padding_top": 40,
+        "padding_bottom": 56,
         "auto_add_handle": "soft-winter-jacket"
       }
     }
