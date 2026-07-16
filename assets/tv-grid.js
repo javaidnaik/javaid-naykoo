@@ -7,6 +7,10 @@
  *     was built server-side in Liquid (id/title/description/image/options/variants,
  *     every price already formatted with `| money`). The client NEVER formats
  *     currency and NEVER fetches product data to open a popup.
+ *   - The "Color" option renders as a pill/button group (selected value marked by
+ *     a 5px black left bar) and is shown first; every other option is a <select>.
+ *     Matching is by option NAME, so it works whatever order the product lists
+ *     its options in. With no colour option it falls back to option index 0.
  *   - Resolve the selected variant, drive ADD TO CART state (disabled / UNAVAILABLE
  *     / SOLD OUT), and add to cart via {{ routes.cart_add_url }}.
  *   - Auto-add rule: if the chosen variant's options include BOTH "Black" and
@@ -18,6 +22,34 @@
  * Vanilla JS only — no libraries.
  */
 
+/**
+ * @typedef {Object} TvVariant
+ * @property {number} id
+ * @property {string[]} options
+ * @property {boolean} available
+ * @property {string} price
+ */
+
+/**
+ * @typedef {Object} TvProduct
+ * @property {number} id
+ * @property {string} title
+ * @property {string} description
+ * @property {string} image
+ * @property {boolean} hasOnlyDefaultVariant
+ * @property {string[]} options
+ * @property {string} price
+ * @property {TvVariant[]} variants
+ */
+
+/**
+ * @typedef {Object} TvState
+ * @property {TvProduct} product
+ * @property {(string|null)[]} selected
+ * @property {boolean} hasOptions
+ * @property {TvVariant|null} variant
+ */
+
 (() => {
   const LABEL_DEFAULT = 'ADD TO CART';
   const LABEL_ADDED = 'ADDED ✓';
@@ -25,24 +57,32 @@
   const LABEL_SOLDOUT = 'SOLD OUT';
 
   class TvProductGrid extends HTMLElement {
-    connectedCallback() {
-      /** @type {Map<string, object>} Memoised payloads keyed by block id. */
+    constructor() {
+      super();
+      /** @type {Map<string, TvProduct|null>} Memoised payloads keyed by block id. */
       this.payloads = new Map();
       /** @type {Promise<number|null>|null} Cached companion-variant lookup. */
       this.companionPromise = null;
-      /** Currently open popup state, or null when closed. */
+      /** @type {TvState|null} Currently open popup state, or null when closed. */
       this.state = null;
+      /** @type {HTMLElement|null} Element focus returns to on close. */
+      this.previousFocus = null;
+      this.cartAddUrl = '';
+      this.rootUrl = '/';
+      this.autoAddHandle = '';
 
-      this.cartAddUrl = this.dataset.cartAddUrl;
-      this.rootUrl = this.dataset.rootUrl || '/';
-      this.autoAddHandle = (this.dataset.autoAddHandle || '').trim();
-
-      this.popup = this.querySelector('[data-tv-popup]');
-
-      // Delegated listeners — one of each on the root.
+      // Bind delegated handlers once (constructor => never undefined at use sites).
       this.onClick = this.handleClick.bind(this);
       this.onChange = this.handleChange.bind(this);
       this.onKeydown = this.handleKeydown.bind(this);
+    }
+
+    connectedCallback() {
+      this.cartAddUrl = this.dataset.cartAddUrl || '';
+      this.rootUrl = this.dataset.rootUrl || '/';
+      this.autoAddHandle = (this.dataset.autoAddHandle || '').trim();
+
+      // Delegated listeners — one of each on the root.
       this.addEventListener('click', this.onClick);
       this.addEventListener('change', this.onChange);
       document.addEventListener('keydown', this.onKeydown);
@@ -54,6 +94,11 @@
       this.unlockScroll();
     }
 
+    /** @returns {HTMLElement} The single popup dialog wrapper for this section. */
+    get popup() {
+      return /** @type {HTMLElement} */ (this.querySelector('[data-tv-popup]'));
+    }
+
     /* ---------------------------------------------------------------- events */
 
     /**
@@ -61,24 +106,27 @@
      * @param {MouseEvent} event
      */
     handleClick(event) {
-      const hotspot = event.target.closest('[data-tv-hotspot]');
+      const target = /** @type {HTMLElement} */ (event.target);
+      if (!target) return;
+
+      const hotspot = /** @type {HTMLElement|null} */ (target.closest('[data-tv-hotspot]'));
       if (hotspot && this.contains(hotspot)) {
-        this.open(hotspot.dataset.tvHotspot, hotspot);
+        this.open(hotspot.dataset.tvHotspot || '', hotspot);
         return;
       }
 
-      if (event.target.closest('[data-tv-close]')) {
+      if (target.closest('[data-tv-close]')) {
         this.close();
         return;
       }
 
-      const optBtn = event.target.closest('[data-tv-opt-btn]');
+      const optBtn = /** @type {HTMLElement|null} */ (target.closest('[data-tv-opt-btn]'));
       if (optBtn) {
-        this.selectOption(0, optBtn.dataset.value);
+        this.selectOption(Number(optBtn.dataset.optIndex), optBtn.dataset.value || null);
         return;
       }
 
-      if (event.target.closest('[data-tv-atc]')) {
+      if (target.closest('[data-tv-atc]')) {
         this.addToCart();
       }
     }
@@ -88,13 +136,16 @@
      * @param {Event} event
      */
     handleChange(event) {
-      const select = event.target.closest('[data-tv-select]');
+      const target = /** @type {HTMLElement} */ (event.target);
+      const select = /** @type {HTMLSelectElement|null} */ (
+        target && target.closest('[data-tv-select]')
+      );
       if (!select) return;
       this.selectOption(Number(select.dataset.optIndex), select.value || null);
     }
 
     /**
-     * Document-level Escape handler.
+     * Document-level Escape handler (+ focus trap while open).
      * @param {KeyboardEvent} event
      */
     handleKeydown(event) {
@@ -111,20 +162,36 @@
     /**
      * Read (and memoise) a block's JSON payload.
      * @param {string} blockId
-     * @returns {object|null}
+     * @returns {TvProduct|null}
      */
     getPayload(blockId) {
-      if (this.payloads.has(blockId)) return this.payloads.get(blockId);
+      if (this.payloads.has(blockId)) return this.payloads.get(blockId) ?? null;
       const node = this.querySelector(`[data-tv-product="${blockId}"]`);
-      if (!node) return null;
+      /** @type {TvProduct|null} */
       let data = null;
-      try {
-        data = JSON.parse(node.textContent);
-      } catch (err) {
-        data = null;
+      if (node) {
+        try {
+          data = JSON.parse(node.textContent || 'null');
+        } catch (err) {
+          data = null;
+        }
       }
       this.payloads.set(blockId, data);
       return data;
+    }
+
+    /**
+     * Index of the option that renders as pills — the "Color" option
+     * (case-insensitive), falling back to option 0 when there is none.
+     * @param {TvProduct} product
+     * @returns {number}
+     */
+    pillIndex(product) {
+      const idx = product.options.findIndex((name) => {
+        const lower = String(name).toLowerCase();
+        return lower === 'color' || lower === 'colour';
+      });
+      return idx === -1 ? 0 : idx;
     }
 
     /**
@@ -137,12 +204,16 @@
       if (!product) return;
 
       // selected[i] holds the chosen value for option index i (null = unchosen).
-      // Preselect option 0 (per Figma) but leave the rest for the shopper.
+      // Preselect the pill (Color) option per Figma; leave the rest to the shopper.
       const hasOptions = !product.hasOnlyDefaultVariant && product.options.length > 0;
+      /** @type {(string|null)[]} */
       const selected = hasOptions ? product.options.map(() => null) : [];
-      if (hasOptions) selected[0] = this.optionValues(product, 0)[0] || null;
+      if (hasOptions) {
+        const pill = this.pillIndex(product);
+        selected[pill] = this.optionValues(product, pill)[0] || null;
+      }
 
-      this.state = { product, selected, hasOptions, variant: null, trigger };
+      this.state = { product, selected, hasOptions, variant: null };
 
       this.fill(product);
       this.renderOptions(product, selected);
@@ -152,17 +223,17 @@
       this.lockScroll();
 
       // Move focus into the dialog and remember where it came from.
-      this.previousFocus = trigger || document.activeElement;
-      const close = this.popup.querySelector('[data-tv-close]');
+      this.previousFocus = trigger || /** @type {HTMLElement|null} */ (document.activeElement);
+      const close = /** @type {HTMLElement|null} */ (this.popup.querySelector('[data-tv-close]'));
       if (close) close.focus();
     }
 
     /**
      * Write the static product fields into the dialog shell.
-     * @param {object} product
+     * @param {TvProduct} product
      */
     fill(product) {
-      const img = this.popup.querySelector('[data-tv-img]');
+      const img = /** @type {HTMLImageElement|null} */ (this.popup.querySelector('[data-tv-img]'));
       if (img) {
         img.src = product.image || '';
         img.alt = product.title || '';
@@ -177,11 +248,12 @@
 
     /**
      * Unique values for a given option index, in first-seen order.
-     * @param {object} product
+     * @param {TvProduct} product
      * @param {number} index
      * @returns {string[]}
      */
     optionValues(product, index) {
+      /** @type {string[]} */
       const seen = [];
       product.variants.forEach((v) => {
         const value = v.options[index];
@@ -191,18 +263,27 @@
     }
 
     /**
-     * Build the option groups: index 0 -> button group, index 1+ -> <select>.
-     * Hidden entirely for default-variant-only products.
-     * @param {object} product
+     * Build the option groups: the pill (Color) option first, all others as
+     * <select>. Hidden entirely for default-variant-only products.
+     * @param {TvProduct} product
      * @param {(string|null)[]} selected
      */
     renderOptions(product, selected) {
-      const host = this.popup.querySelector('[data-tv-options]');
+      const host = /** @type {HTMLElement|null} */ (this.popup.querySelector('[data-tv-options]'));
       if (!host) return;
       host.innerHTML = '';
       if (product.hasOnlyDefaultVariant || product.options.length === 0) return;
 
-      product.options.forEach((name, index) => {
+      const pill = this.pillIndex(product);
+      // Pill group first, remaining options after in their original order.
+      /** @type {number[]} */
+      const order = [pill];
+      product.options.forEach((_name, i) => {
+        if (i !== pill) order.push(i);
+      });
+
+      order.forEach((index) => {
+        const name = product.options[index] || '';
         const group = document.createElement('div');
         group.className = 'tv-opt';
 
@@ -211,8 +292,8 @@
         label.textContent = name;
         group.appendChild(label);
 
-        if (index === 0) {
-          group.appendChild(this.buildButtons(product, index, selected[index], name));
+        if (index === pill) {
+          group.appendChild(this.buildButtons(product, index, selected[index] ?? null, name));
         } else {
           group.appendChild(this.buildSelect(product, index, name));
         }
@@ -221,7 +302,11 @@
     }
 
     /**
-     * Button group for option index 0.
+     * Pill/button group for the Color option.
+     * @param {TvProduct} product
+     * @param {number} index
+     * @param {string|null} selectedValue
+     * @param {string} name
      * @returns {HTMLElement}
      */
     buildButtons(product, index, selectedValue, name) {
@@ -235,6 +320,7 @@
         btn.type = 'button';
         btn.className = 'tv-opt__btn';
         btn.dataset.tvOptBtn = '';
+        btn.dataset.optIndex = String(index);
         btn.dataset.value = value;
         btn.textContent = value;
         const isSelected = value === selectedValue;
@@ -246,7 +332,10 @@
     }
 
     /**
-     * Native <select> for option index 1+, with a disabled placeholder.
+     * Native <select> for a non-colour option, with a disabled placeholder.
+     * @param {TvProduct} product
+     * @param {number} index
+     * @param {string} name
      * @returns {HTMLElement}
      */
     buildSelect(product, index, name) {
@@ -293,37 +382,36 @@
       if (!this.state || !this.state.hasOptions) return;
       this.state.selected[index] = value;
 
-      if (index === 0) {
-        // Reflect the selected button visually.
-        this.popup.querySelectorAll('[data-tv-opt-btn]').forEach((btn) => {
+      // Reflect the pill selection visually (no-op for <select> option groups).
+      this.popup
+        .querySelectorAll(`[data-tv-opt-btn][data-opt-index="${index}"]`)
+        .forEach((node) => {
+          const btn = /** @type {HTMLElement} */ (node);
           const on = btn.dataset.value === value;
           btn.classList.toggle('is-selected', on);
           btn.setAttribute('aria-pressed', String(on));
         });
-      }
       this.update();
     }
 
     /**
      * Resolve the variant matching every selected option (null if incomplete
      * or if the combination does not exist).
-     * @returns {object|null}
+     * @returns {TvVariant|null}
      */
     resolveVariant() {
+      if (!this.state) return null;
       const { product, selected, hasOptions } = this.state;
       if (!hasOptions) return product.variants[0] || null;
       if (selected.some((v) => v == null)) return null;
       return (
-        product.variants.find((v) =>
-          selected.every((value, i) => v.options[i] === value)
-        ) || null
+        product.variants.find((v) => selected.every((value, i) => v.options[i] === value)) || null
       );
     }
 
-    /**
-     * Recompute price + ADD TO CART button state from the current selection.
-     */
+    /** Recompute price + ADD TO CART button state from the current selection. */
     update() {
+      if (!this.state) return;
       const { product, selected, hasOptions } = this.state;
       const complete = !hasOptions || selected.every((v) => v != null);
       const variant = complete ? this.resolveVariant() : null;
@@ -332,7 +420,7 @@
       // Price follows the resolved variant, else falls back to the default.
       this.setText('[data-tv-price]', variant ? variant.price : product.price);
 
-      const atc = this.popup.querySelector('[data-tv-atc]');
+      const atc = /** @type {HTMLButtonElement|null} */ (this.popup.querySelector('[data-tv-atc]'));
       const labelEl = this.popup.querySelector('[data-tv-atc-label]');
       let label = LABEL_DEFAULT;
       let disabled = true;
@@ -353,13 +441,11 @@
 
     /* ------------------------------------------------------------- add cart */
 
-    /**
-     * Add the resolved variant (plus companion when the rule fires) to the cart.
-     */
+    /** Add the resolved variant (plus companion when the rule fires) to the cart. */
     async addToCart() {
       if (!this.state || !this.state.variant) return;
       const variant = this.state.variant;
-      const atc = this.popup.querySelector('[data-tv-atc]');
+      const atc = /** @type {HTMLButtonElement|null} */ (this.popup.querySelector('[data-tv-atc]'));
       const labelEl = this.popup.querySelector('[data-tv-atc-label]');
 
       const items = [{ id: variant.id, quantity: 1 }];
@@ -422,7 +508,7 @@
           .then((res) => (res.ok ? res.json() : null))
           .then((product) => {
             if (!product || !product.variants) return null;
-            const available = product.variants.find((v) => v.available);
+            const available = product.variants.find((/** @type {any} */ v) => v.available);
             return available ? available.id : null;
           })
           .catch(() => null);
@@ -432,7 +518,7 @@
 
     /**
      * Swap Dawn's #cart-icon-bubble from the returned section HTML (guard if absent).
-     * @param {object|undefined} sections
+     * @param {Record<string, string>|undefined} sections
      */
     updateCartBubble(sections) {
       if (!sections) return;
@@ -461,13 +547,15 @@
      * @param {KeyboardEvent} event
      */
     trapFocus(event) {
-      const focusables = this.popup.querySelectorAll(
+      const nodes = this.popup.querySelectorAll(
         'button, select, a[href], [tabindex]:not([tabindex="-1"])'
       );
-      const list = Array.from(focusables).filter((el) => !el.disabled && el.offsetParent !== null);
-      if (list.length === 0) return;
+      const list = /** @type {HTMLElement[]} */ (Array.from(nodes)).filter(
+        (el) => !el.matches('[disabled]') && el.offsetParent !== null
+      );
       const first = list[0];
       const last = list[list.length - 1];
+      if (!first || !last) return;
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();
@@ -496,7 +584,7 @@
 
     /** @param {string} message empty string hides the alert. */
     setError(message) {
-      const el = this.popup.querySelector('[data-tv-error]');
+      const el = /** @type {HTMLElement|null} */ (this.popup.querySelector('[data-tv-error]'));
       if (!el) return;
       el.textContent = message;
       el.hidden = !message;
