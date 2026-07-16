@@ -292,6 +292,25 @@
     width: 100%;
     max-width: 18rem;
   }
+
+  .tv-grid__heading {
+    text-align:center;
+    font-size: 30px;
+  }
+  .tv-banner__description>* {
+    font-size: 18px;
+  }
+  .tv-banner__infobar {
+    font-size: 16px;
+  }
+  .tv-grid__hotspot {
+    width: 1.3rem;
+    height: 1.3rem;
+    font-size: 1.2rem;
+  }
+  .tv-banner__heading {
+    font-size: 40px;
+  }
 }
 
 /* Respect reduced-motion for the hotspot hover scale. */
