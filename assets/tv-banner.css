@@ -71,7 +71,8 @@
 .tv-banner__copy {
   position: absolute;
   left: 4.8rem;
-  bottom: 4.8rem;
+  /* Vertical position is merchant-controlled (% of the hero height from bottom). */
+  bottom: var(--tv-hero-offset, 8%);
   max-width: 60rem;
   display: flex;
   flex-direction: column;
@@ -81,7 +82,8 @@
 
 .tv-banner__heading {
   margin: 0;
-  font-size: clamp(4.8rem, 7vw, 8.4rem);
+  /* Merchant-controlled max size; still scales down on narrow desktops. */
+  font-size: clamp(4.8rem, 7vw, var(--tv-banner-heading, 8.4rem));
   font-weight: 700;
   line-height: 0.98;
   letter-spacing: -0.01em;

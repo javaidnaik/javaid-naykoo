@@ -30,7 +30,10 @@
   </a>
 {%- endcapture -%}
 
-<section class="tv-banner">
+<section
+  class="tv-banner"
+  style="--tv-banner-heading: {{ s.heading_size }}px; --tv-hero-offset: {{ s.hero_content_offset }}%;"
+>
   {%- comment -%} Top bar {%- endcomment -%}
   <div class="tv-banner__topbar">
     <button
@@ -141,6 +144,27 @@
       "id": "heading",
       "label": "Heading",
       "default": "The Gift Guide"
+    },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Heading font size (desktop max)",
+      "min": 40,
+      "max": 120,
+      "step": 2,
+      "unit": "px",
+      "default": 84
+    },
+    {
+      "type": "range",
+      "id": "hero_content_offset",
+      "label": "Hero content distance from bottom",
+      "info": "Higher lifts the heading/button up the illustration.",
+      "min": 0,
+      "max": 55,
+      "step": 1,
+      "unit": "%",
+      "default": 8
     },
     {
       "type": "richtext",
