@@ -53,7 +53,7 @@
               type="button"
               class="tv-grid__hotspot"
               data-tv-hotspot="{{ block.id }}"
-              style="--tv-x: {{ block.settings.hotspot_x }}%; --tv-y: {{ block.settings.hotspot_y }}%;"
+              style="--tv-x: {{ block.settings.hotspot_x }}%; --tv-y: {{ block.settings.hotspot_y }}%; --tv-x-m: {{ block.settings.hotspot_x_mobile }}%; --tv-y-m: {{ block.settings.hotspot_y_mobile }}%;"
               aria-label="Quick view {{ product.title | escape }}"
             >
               +
@@ -202,9 +202,13 @@
           "info": "Overrides the product's featured image."
         },
         {
+          "type": "header",
+          "content": "Hotspot position — desktop"
+        },
+        {
           "type": "range",
           "id": "hotspot_x",
-          "label": "Hotspot horizontal position",
+          "label": "Horizontal position",
           "min": 5,
           "max": 95,
           "step": 1,
@@ -214,12 +218,36 @@
         {
           "type": "range",
           "id": "hotspot_y",
-          "label": "Hotspot vertical position",
+          "label": "Vertical position",
           "min": 5,
           "max": 95,
           "step": 1,
           "unit": "%",
           "default": 50
+        },
+        {
+          "type": "header",
+          "content": "Hotspot position — mobile"
+        },
+        {
+          "type": "range",
+          "id": "hotspot_x_mobile",
+          "label": "Horizontal position",
+          "min": 5,
+          "max": 95,
+          "step": 1,
+          "unit": "%",
+          "default": 60
+        },
+        {
+          "type": "range",
+          "id": "hotspot_y_mobile",
+          "label": "Vertical position",
+          "min": 5,
+          "max": 95,
+          "step": 1,
+          "unit": "%",
+          "default": 15
         }
       ]
     }

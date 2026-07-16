@@ -53,8 +53,8 @@
   left: var(--tv-x, 50%);
   top: var(--tv-y, 50%);
   transform: translate(-50%, -50%);
-  width: 3rem;
-  height: 3rem;
+  width: 2rem;
+  height: 2rem;
   border-radius: 50%;
   border: 0;
   background: #fff;
@@ -274,6 +274,13 @@
 
   .tv-grid__items {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Mobile uses its own per-hotspot position (defaults to top-centre, +10%
+     right) instead of inheriting the desktop placement. */
+  .tv-grid__hotspot {
+    left: var(--tv-x-m, 60%);
+    top: var(--tv-y-m, 15%);
   }
 
   .tv-popup__head {
