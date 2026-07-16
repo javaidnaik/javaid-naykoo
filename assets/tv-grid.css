@@ -311,6 +311,9 @@
   .tv-banner__heading {
     font-size: 40px;
   }
+  .tv-popup__dialog {
+    width: min-content;
+  }
 }
 
 /* Respect reduced-motion for the hotspot hover scale. */
