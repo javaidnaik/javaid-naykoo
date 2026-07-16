@@ -10,6 +10,7 @@
   /* Top/bottom spacing is merchant-controlled; horizontal stays fixed. */
   padding: var(--tv-grid-pt, 4rem) 3.2rem var(--tv-grid-pb, 5.6rem);
   color: #000;
+  display: grid;
 }
 
 .tv-grid__heading {
