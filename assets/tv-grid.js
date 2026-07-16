@@ -323,12 +323,40 @@
         btn.dataset.optIndex = String(index);
         btn.dataset.value = value;
         btn.textContent = value;
+        // Colour the selected pill's left bar to match the actual colour.
+        btn.style.setProperty('--tv-swatch', this.colorSwatch(value));
         const isSelected = value === selectedValue;
         btn.classList.toggle('is-selected', isSelected);
         btn.setAttribute('aria-pressed', String(isSelected));
         wrap.appendChild(btn);
       });
       return wrap;
+    }
+
+    /**
+     * Best-effort CSS colour for an option value, used for the selected pill's
+     * left swatch bar. Uses CSS.supports so any valid colour name works; falls
+     * back to black when the value is not a recognisable colour.
+     * @param {string} value
+     * @returns {string}
+     */
+    colorSwatch(value) {
+      const raw = String(value).trim().toLowerCase();
+      /** @type {Record<string, string>} */
+      const aliases = {
+        'navy blue': '#001f5b',
+        'off white': '#f2efe6',
+        'light grey': '#d3d3d3',
+        'light gray': '#d3d3d3',
+        'dark grey': '#555555',
+        'dark gray': '#555555',
+      };
+      if (aliases[raw]) return aliases[raw];
+      const canUse = typeof CSS !== 'undefined' && typeof CSS.supports === 'function';
+      const compact = raw.replace(/\s+/g, '');
+      if (canUse && CSS.supports('color', compact)) return compact;
+      if (canUse && CSS.supports('color', raw)) return raw;
+      return '#000';
     }
 
     /**

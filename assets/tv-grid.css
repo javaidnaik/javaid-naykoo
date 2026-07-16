@@ -180,6 +180,7 @@
 }
 
 .tv-opt__btn {
+  position: relative;
   flex: 1 1 0;
   padding: 1.2rem 1.4rem;
   border: 0;
@@ -195,9 +196,18 @@
   border-left: 0;
 }
 
-/* Selected value gets a thick 5px black left bar. */
-.tv-opt__btn.is-selected {
-  box-shadow: inset 5px 0 0 0 #000;
+/* Selected value gets a thick 5px left bar coloured to match the actual
+   colour (--tv-swatch is set per-button by JS). The hairline keeps light
+   swatches such as white visible on the white button. */
+.tv-opt__btn.is-selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--tv-swatch, #000);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
 }
 
 /* Option index 1+ -> native select with custom chevron + leading divider. */
