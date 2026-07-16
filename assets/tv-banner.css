@@ -1,0 +1,183 @@
+/* ============================================================================
+   tv-banner — "The Gift Guide" hero banner.
+   Fully self-contained; no Dawn classes reused. Everything is prefixed `tv-`.
+   Shared `.tv-btn` styles live in snippets/tv-arrow.liquid.
+   Breakpoint: 749px (Dawn convention) — desktop styles are the default,
+   mobile overrides live in the max-width media query at the bottom.
+   ============================================================================ */
+
+.tv-banner {
+  --tv-banner-bar-bg: #f4f4f4;
+  --tv-banner-ink: #000;
+  background: #fff;
+  color: var(--tv-banner-ink);
+}
+
+/* ---- Top bar: logo | announcement | CHOOSE GIFT --------------------------- */
+.tv-banner__topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.4rem 3.2rem;
+  background: var(--tv-banner-bar-bg);
+}
+
+.tv-banner__logo {
+  margin: 0;
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.tv-banner__announcement {
+  margin: 0;
+  justify-self: center;
+  font-size: 1.5rem;
+}
+
+.tv-banner__topbar .tv-btn {
+  justify-self: end;
+}
+
+/* Burger only shows on mobile. */
+.tv-banner__burger {
+  display: none;
+  background: none;
+  border: 0;
+  padding: 0.4rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.tv-banner__burger svg {
+  display: block;
+}
+
+/* ---- Hero: full-bleed illustration with copy anchored bottom-left --------- */
+.tv-banner__hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.tv-banner__illustration {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.tv-banner__copy {
+  position: absolute;
+  left: 4.8rem;
+  bottom: 4.8rem;
+  max-width: 60rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2.4rem;
+}
+
+.tv-banner__heading {
+  margin: 0;
+  font-size: clamp(4.8rem, 7vw, 8.4rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+}
+
+.tv-banner__description {
+  margin: 0;
+  max-width: 46rem;
+  font-size: 1.9rem;
+  line-height: 1.4;
+}
+
+.tv-banner__description > * {
+  margin: 0;
+}
+
+/* The image overlay button is mobile-only; hidden by default (desktop). */
+.tv-banner__overlay-btn {
+  display: none;
+}
+
+/* ---- Info bar: full-width uppercase strip -------------------------------- */
+.tv-banner__infobar {
+  margin: 0;
+  padding: 1.4rem 2rem;
+  background: var(--tv-banner-bar-bg);
+  text-align: center;
+  font-size: 1.5rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---- Mobile (<= 749px): burger + centered logo, copy on white, ----------- */
+/* ---- illustration below with SHOP NOW overlaid --------------------------- */
+@media screen and (max-width: 749px) {
+  .tv-banner__topbar {
+    grid-template-columns: auto 1fr auto;
+    padding: 1.2rem 1.6rem;
+  }
+
+  .tv-banner__burger {
+    display: inline-flex;
+  }
+
+  .tv-banner__logo {
+    grid-column: 2;
+    justify-self: center;
+    font-size: 1.9rem;
+  }
+
+  /* Hidden on mobile per Figma. */
+  .tv-banner__announcement,
+  .tv-banner__topbar .tv-btn {
+    display: none;
+  }
+
+  .tv-banner__hero {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Copy comes first, centered on white, above the illustration. */
+  .tv-banner__copy {
+    position: static;
+    order: -1;
+    left: auto;
+    bottom: auto;
+    max-width: none;
+    align-items: center;
+    text-align: center;
+    padding: 3.2rem 2rem 2.4rem;
+    gap: 1.6rem;
+  }
+
+  .tv-banner__heading {
+    font-size: clamp(3.2rem, 11vw, 4.4rem);
+  }
+
+  .tv-banner__description {
+    font-size: 1.6rem;
+  }
+
+  /* The hero button becomes an overlay on top of the illustration. */
+  .tv-banner__copy .tv-btn {
+    display: none;
+  }
+
+  .tv-banner__media {
+    position: relative;
+  }
+
+  .tv-banner__overlay-btn {
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+}

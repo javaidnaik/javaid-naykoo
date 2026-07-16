@@ -1,0 +1,121 @@
+{% doc %}
+  Renders one long right-pointing arrow SVG for the animated "fly-through" button.
+
+  A `.tv-btn` places TWO of these inside a `.tv-btn__viewport` (overflow: hidden).
+  On hover/focus the visible arrow flies out to the right while the identical clone
+  slides in from the left. Because both arrows are identical the motion reads as one
+  continuous arrow travelling through the button.
+
+  This snippet is the single source of truth for the shared arrow-button component,
+  so it also carries the `.tv-btn` component CSS (shell + viewport + animation). Both
+  `tv-banner` and `tv-grid` render this snippet, so Shopify bundles the styles once.
+
+  @example
+    <a class="tv-btn tv-btn--dark" href="{{ product.url }}">
+      <span class="tv-btn__label">Shop now</span>
+      <span class="tv-btn__viewport" aria-hidden="true">
+        {% render 'tv-arrow' %}
+        {% render 'tv-arrow' %}
+      </span>
+    </a>
+{% enddoc %}
+
+<svg
+  class="tv-arrow"
+  viewBox="0 0 42 16"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  aria-hidden="true"
+  focusable="false"
+>
+  <path
+    d="M0 8h39M32 1l7 7-7 7"
+    stroke="currentColor"
+    stroke-width="1.6"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
+  />
+</svg>
+
+{% stylesheet %}
+  /* ============================================================
+     .tv-btn — shared animated "fly-through" arrow button.
+     Used by tv-banner (CHOOSE GIFT, SHOP NOW) and tv-grid (ADD TO CART).
+     ============================================================ */
+  .tv-btn {
+    --tv-btn-arrow-w: 42px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2.4rem;
+    box-sizing: border-box;
+    padding: 1.4rem 2.2rem;
+    border: 0;
+    font: inherit;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    text-decoration: none;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .tv-btn__label {
+    white-space: nowrap;
+  }
+
+  /* Fixed-width window that clips the two side-by-side arrows (track = 2 arrows).
+     At rest the SECOND arrow is the one on screen, so on hover the pair shifts one
+     arrow-width right: the visible arrow exits right and the clone enters from left. */
+  .tv-btn__viewport {
+    position: relative;
+    display: flex;
+    width: var(--tv-btn-arrow-w);
+    height: 16px;
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+
+  .tv-btn__viewport .tv-arrow {
+    flex: 0 0 var(--tv-btn-arrow-w);
+    width: var(--tv-btn-arrow-w);
+    height: 16px;
+    transform: translateX(-100%);
+    transition: transform 350ms ease;
+  }
+
+  /* Move both arrows one arrow-width to the right on hover/focus. */
+  .tv-btn:hover .tv-btn__viewport .tv-arrow,
+  .tv-btn:focus-visible .tv-btn__viewport .tv-arrow {
+    transform: translateX(0);
+  }
+
+  /* Colour variants. */
+  .tv-btn--yellow {
+    background: #ffec3d;
+    color: #000;
+  }
+
+  .tv-btn--dark {
+    background: #000;
+    color: #fff;
+  }
+
+  .tv-btn--dark:hover,
+  .tv-btn--dark:focus-visible {
+    background: #1a1a1a;
+  }
+
+  .tv-btn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* Respect users who prefer reduced motion: kill the fly-through. */
+  @media (prefers-reduced-motion: reduce) {
+    .tv-btn__viewport .tv-arrow {
+      transition: none;
+    }
+  }
+{% endstylesheet %}

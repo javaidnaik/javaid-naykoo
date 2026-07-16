@@ -1,0 +1,179 @@
+{% comment %}
+  tv-banner — "The Gift Guide" hero banner (built from scratch, no Dawn reuse).
+
+  Structure:
+    .tv-banner__topbar   logo | announcement | CHOOSE GIFT button (burger on mobile)
+    .tv-banner__hero     full-bleed illustration (LCP) + copy block anchored bottom-left
+    .tv-banner__infobar  full-width uppercase strip
+
+  Every text wrapped in a red rectangle in the Figma is a schema setting below.
+  The illustration is the LCP image: eager + fetchpriority="high".
+{% endcomment %}
+
+{{ 'tv-banner.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign s = section.settings
+  # Render the shared animated hero button once, reuse it for both the desktop
+  # (in-copy) and mobile (image overlay) placements.
+-%}
+{%- capture hero_button -%}
+  <a
+    class="tv-btn tv-btn--dark"
+    {% if s.hero_button_link != blank %}href="{{ s.hero_button_link }}"{% else %}href="{{ routes.all_products_collection_url }}"{% endif %}
+  >
+    <span class="tv-btn__label">{{ s.hero_button_label | escape }}</span>
+    <span class="tv-btn__viewport" aria-hidden="true">
+      {% render 'tv-arrow' %}
+      {% render 'tv-arrow' %}
+    </span>
+  </a>
+{%- endcapture -%}
+
+<section class="tv-banner">
+  {%- comment -%} Top bar {%- endcomment -%}
+  <div class="tv-banner__topbar">
+    <button
+      type="button"
+      class="tv-banner__burger"
+      aria-label="Menu"
+    >
+      <svg width="26" height="18" viewBox="0 0 26 18" fill="none" aria-hidden="true" focusable="false">
+        <path d="M0 1h26M0 9h26M0 17h26" stroke="currentColor" stroke-width="1.6" />
+      </svg>
+    </button>
+
+    <p class="tv-banner__logo">{{ s.logo_text | escape }}</p>
+
+    <p class="tv-banner__announcement">{{ s.announcement_text | escape }}</p>
+
+    {%- if s.top_button_label != blank -%}
+      <a
+        class="tv-btn tv-btn--yellow"
+        {% if s.top_button_link != blank %}href="{{ s.top_button_link }}"{% else %}href="#"{% endif %}
+      >
+        <span class="tv-btn__label">{{ s.top_button_label | escape }}</span>
+        <span class="tv-btn__viewport" aria-hidden="true">
+          {% render 'tv-arrow' %}
+          {% render 'tv-arrow' %}
+        </span>
+      </a>
+    {%- endif -%}
+  </div>
+
+  {%- comment -%} Hero {%- endcomment -%}
+  <div class="tv-banner__hero">
+    <div class="tv-banner__media">
+      {%- if s.illustration != blank -%}
+        {{
+          s.illustration
+          | image_url: width: 3000
+          | image_tag:
+            class: 'tv-banner__illustration',
+            loading: 'eager',
+            fetchpriority: 'high',
+            widths: '750, 1100, 1500, 2000, 3000',
+            sizes: '100vw',
+            alt: s.heading
+        }}
+      {%- else -%}
+        {{ 'lifestyle-1' | placeholder_svg_tag: 'tv-banner__illustration' }}
+      {%- endif -%}
+
+      {%- comment -%} Mobile-only overlay button on the illustration {%- endcomment -%}
+      <div class="tv-banner__overlay-btn">{{ hero_button }}</div>
+    </div>
+
+    <div class="tv-banner__copy">
+      <h2 class="tv-banner__heading">{{ s.heading | escape }}</h2>
+      <div class="tv-banner__description">{{ s.description }}</div>
+      {{ hero_button }}
+    </div>
+  </div>
+
+  {%- comment -%} Info bar {%- endcomment -%}
+  <p class="tv-banner__infobar">{{ s.info_bar_text | escape }}</p>
+</section>
+
+{% schema %}
+{
+  "name": "TV Banner",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Top bar"
+    },
+    {
+      "type": "text",
+      "id": "logo_text",
+      "label": "Logo text",
+      "default": "TISSO VISON"
+    },
+    {
+      "type": "text",
+      "id": "announcement_text",
+      "label": "Announcement text",
+      "default": "Find the ideal gift for your loved ones."
+    },
+    {
+      "type": "text",
+      "id": "top_button_label",
+      "label": "Top button label",
+      "default": "CHOOSE GIFT"
+    },
+    {
+      "type": "url",
+      "id": "top_button_link",
+      "label": "Top button link"
+    },
+    {
+      "type": "header",
+      "content": "Hero"
+    },
+    {
+      "type": "image_picker",
+      "id": "illustration",
+      "label": "Illustration (LCP image)"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "The Gift Guide"
+    },
+    {
+      "type": "richtext",
+      "id": "description",
+      "label": "Description",
+      "default": "<p>Discover Joy: Your Ultimate Holiday Gift Destination. Explore our curated selection and find the perfect gifts to delight your loved ones this holiday season.</p>"
+    },
+    {
+      "type": "text",
+      "id": "hero_button_label",
+      "label": "Hero button label",
+      "default": "SHOP NOW"
+    },
+    {
+      "type": "url",
+      "id": "hero_button_link",
+      "label": "Hero button link"
+    },
+    {
+      "type": "header",
+      "content": "Info bar"
+    },
+    {
+      "type": "text",
+      "id": "info_bar_text",
+      "label": "Info bar text",
+      "default": "SUSTAINABLE, ETHICALLY MADE CLOTHES IN SIZES XXS TO 6XL"
+    }
+  ],
+  "presets": [
+    {
+      "name": "TV Banner"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,20 @@
+{
+  "sections": {
+    "tv_banner": {
+      "type": "tv-banner"
+    },
+    "tv_grid": {
+      "type": "tv-grid",
+      "blocks": {
+        "block_1": { "type": "hotspot" },
+        "block_2": { "type": "hotspot" },
+        "block_3": { "type": "hotspot" },
+        "block_4": { "type": "hotspot" },
+        "block_5": { "type": "hotspot" },
+        "block_6": { "type": "hotspot" }
+      },
+      "block_order": ["block_1", "block_2", "block_3", "block_4", "block_5", "block_6"]
+    }
+  },
+  "order": ["tv_banner", "tv_grid"]
+}

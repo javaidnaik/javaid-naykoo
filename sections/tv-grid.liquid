@@ -1,0 +1,202 @@
+{% comment %}
+  tv-grid — "Tisso vison in the wild" lookbook (built from scratch, no Dawn reuse).
+
+  A <tv-product-grid> custom element wraps the whole section. Each block renders a
+  lifestyle image with a positioned "+" hotspot and a <script type="application/json">
+  payload built entirely server-side (prices formatted with `| money`). One popup
+  dialog per section instance is filled client-side from those payloads — the JS
+  never formats currency and never fetches product data to open a popup.
+
+  Routes/handles the JS needs are passed via data-* attributes (assets can't read
+  Liquid), keeping the cart-add URL and companion handle merchant-configurable.
+{% endcomment %}
+
+{{ 'tv-grid.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'tv-grid.js' | asset_url }}" defer="defer"></script>
+
+<tv-product-grid
+  class="tv-grid"
+  data-cart-add-url="{{ routes.cart_add_url }}"
+  data-root-url="{{ routes.root_url }}"
+  data-auto-add-handle="{{ section.settings.auto_add_handle | escape }}"
+>
+  <h2 class="tv-grid__heading">{{ section.settings.heading | escape }}</h2>
+
+  <div class="tv-grid__items">
+    {%- for block in section.blocks -%}
+      {%- liquid
+        assign product = block.settings.product
+        # Lifestyle override image, else the product's featured image.
+        assign image = block.settings.image | default: product.featured_image
+      -%}
+
+      <div class="tv-grid__block" {{ block.shopify_attributes }}>
+        <figure class="tv-grid__figure">
+          {%- if image != blank -%}
+            {{
+              image
+              | image_url: width: 1200
+              | image_tag:
+                class: 'tv-grid__img',
+                loading: 'lazy',
+                widths: '360, 540, 720, 900, 1200',
+                sizes: '(max-width: 749px) 50vw, 33vw',
+                alt: product.title
+            }}
+          {%- else -%}
+            {{ 'lifestyle-2' | placeholder_svg_tag: 'tv-grid__img' }}
+          {%- endif -%}
+
+          {%- if product != blank -%}
+            <button
+              type="button"
+              class="tv-grid__hotspot"
+              data-tv-hotspot="{{ block.id }}"
+              style="--tv-x: {{ block.settings.hotspot_x }}%; --tv-y: {{ block.settings.hotspot_y }}%;"
+              aria-label="Quick view {{ product.title | escape }}"
+            >
+              +
+            </button>
+          {%- endif -%}
+        </figure>
+
+        {%- comment -%} Server-built payload consumed by tv-grid.js {%- endcomment -%}
+        {%- if product != blank -%}
+          {%- capture payload -%}
+            {
+              "id": {{ product.id | json }},
+              "title": {{ product.title | json }},
+              "description": {{ product.description | strip_html | truncatewords: 30 | json }},
+              "image": {{ image | image_url: width: 360 | json }},
+              "hasOnlyDefaultVariant": {{ product.has_only_default_variant | json }},
+              "options": {{ product.options | json }},
+              "price": {{ product.price | money | json }},
+              "variants": [
+                {%- for variant in product.variants -%}
+                  {
+                    "id": {{ variant.id | json }},
+                    "options": {{ variant.options | json }},
+                    "available": {{ variant.available | json }},
+                    "price": {{ variant.price | money | json }}
+                  }{%- unless forloop.last -%},{%- endunless -%}
+                {%- endfor -%}
+              ]
+            }
+          {%- endcapture -%}
+          <script type="application/json" data-tv-product="{{ block.id }}">{{ payload }}</script>
+        {%- endif -%}
+      </div>
+    {%- endfor -%}
+  </div>
+
+  {%- comment -%} Single popup dialog per section instance, filled by JS {%- endcomment -%}
+  <div class="tv-popup" data-tv-popup hidden>
+    <div class="tv-popup__overlay" data-tv-close></div>
+    <div
+      class="tv-popup__dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tv-popup-title-{{ section.id }}"
+    >
+      <button type="button" class="tv-popup__close" data-tv-close aria-label="Close">&times;</button>
+
+      <div class="tv-popup__head">
+        <div class="tv-popup__media">
+          <img class="tv-popup__img" data-tv-img alt="" width="150" height="150">
+        </div>
+        <div class="tv-popup__info">
+          <h3 class="tv-popup__title" id="tv-popup-title-{{ section.id }}" data-tv-title></h3>
+          <p class="tv-popup__price" data-tv-price></p>
+          <p class="tv-popup__desc" data-tv-desc></p>
+        </div>
+      </div>
+
+      <div class="tv-popup__options" data-tv-options></div>
+
+      <p class="tv-popup__error" role="alert" data-tv-error hidden></p>
+
+      <button type="button" class="tv-btn tv-btn--dark tv-popup__atc" data-tv-atc disabled>
+        <span class="tv-btn__label" data-tv-atc-label>ADD TO CART</span>
+        <span class="tv-btn__viewport" aria-hidden="true">
+          {% render 'tv-arrow' %}
+          {% render 'tv-arrow' %}
+        </span>
+      </button>
+    </div>
+  </div>
+</tv-product-grid>
+
+{% schema %}
+{
+  "name": "TV Grid",
+  "tag": "section",
+  "max_blocks": 6,
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Tisso vison in the wild"
+    },
+    {
+      "type": "text",
+      "id": "auto_add_handle",
+      "label": "Auto-add companion product handle",
+      "info": "Added automatically when a Black + Medium variant is added to cart.",
+      "default": "soft-winter-jacket"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "hotspot",
+      "name": "Product",
+      "settings": [
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Product"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Lifestyle image",
+          "info": "Overrides the product's featured image."
+        },
+        {
+          "type": "range",
+          "id": "hotspot_x",
+          "label": "Hotspot horizontal position",
+          "min": 5,
+          "max": 95,
+          "step": 1,
+          "unit": "%",
+          "default": 50
+        },
+        {
+          "type": "range",
+          "id": "hotspot_y",
+          "label": "Hotspot vertical position",
+          "min": 5,
+          "max": 95,
+          "step": 1,
+          "unit": "%",
+          "default": 50
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "TV Grid",
+      "blocks": [
+        { "type": "hotspot" },
+        { "type": "hotspot" },
+        { "type": "hotspot" },
+        { "type": "hotspot" },
+        { "type": "hotspot" },
+        { "type": "hotspot" }
+      ]
+    }
+  ]
+}
+{% endschema %}
