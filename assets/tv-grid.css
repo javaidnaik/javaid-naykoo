@@ -312,7 +312,7 @@
     font-size: 40px;
   }
   .tv-popup__dialog {
-    width: min-content;
+    width: auto;
   }
   .tv-banner__illustration {
     min-height: 360px;
